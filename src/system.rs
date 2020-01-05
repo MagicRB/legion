@@ -1033,7 +1033,7 @@ where
 
     /// Flag this resource type as being written by this system.
     ///
-    /// This will inform the dispatcher to not allow any parralel access to this resource while
+    /// This will inform the dispatcher to not allow any parallel access to this resource while
     /// this system is running.
     pub fn write_resource<T>(mut self) -> SystemBuilder<Q, <R as ConsAppend<Write<T>>>::Output>
     where
@@ -1055,7 +1055,7 @@ where
 
     /// This performs a soft resource block on the component for writing. The dispatcher will
     /// generally handle dispatching read and writes on components based on archetype, allowing
-    /// for more granular access and more parralelization of systems.
+    /// for more granular access and more parallelization of systems.
     ///
     /// Using this method will mark the entire component as read by this system, blocking writing
     /// systems from accessing any archetypes which contain this component for the duration of its
@@ -1075,7 +1075,7 @@ where
 
     /// This performs a exclusive resource block on the component for writing. The dispatcher will
     /// generally handle dispatching read and writes on components based on archetype, allowing
-    /// for more granular access and more parralelization of systems.
+    /// for more granular access and more parallelization of systems.
     ///
     /// Using this method will mark the entire component as written by this system, blocking other
     /// systems from accessing any archetypes which contain this component for the duration of its
@@ -1365,6 +1365,103 @@ mod tests {
             .build(move |_, _, _, _| {
                 state += 1;
             });
+
+        system.prepare(&world);
+        system.run(&world);
+    }
+
+    #[test]
+    fn system_mutate_archetype() {
+        let _ = tracing_subscriber::fmt::try_init();
+
+        let universe = Universe::new();
+        let mut world = universe.create_world();
+
+        #[derive(Default, Clone, Copy)]
+        pub struct Balls(u32);
+
+        let components = vec![
+            (Pos(1., 2., 3.), Vel(0.1, 0.2, 0.3)),
+            (Pos(4., 5., 6.), Vel(0.4, 0.5, 0.6)),
+        ];
+
+        let mut expected = HashMap::<Entity, (Pos, Vel)>::new();
+
+        for (i, e) in world.insert((), components.clone()).iter().enumerate() {
+            if let Some((pos, rot)) = components.get(i) {
+                expected.insert(*e, (*pos, *rot));
+            }
+        }
+
+        let expected_copy = expected.clone();
+        let mut system = SystemBuilder::<()>::new("TestSystem")
+            .with_query(<(Read<Pos>, Read<Vel>)>::query())
+            .build(move |_, world, _, query| {
+                let mut count = 0;
+                {
+                    for (entity, (pos, vel)) in query.iter_entities_immutable(world) {
+                        assert_eq!(expected_copy.get(&entity).unwrap().0, *pos);
+                        assert_eq!(expected_copy.get(&entity).unwrap().1, *vel);
+                        count += 1;
+                    }
+                }
+
+                assert_eq!(components.len(), count);
+            });
+
+        system.prepare(&world);
+        system.run(&world);
+
+        world.add_component(*(expected.keys().nth(0).unwrap()), Balls::default());
+
+        system.prepare(&world);
+        system.run(&world);
+    }
+
+    #[test]
+    fn system_mutate_archetype_buffer() {
+        let _ = tracing_subscriber::fmt::try_init();
+
+        let universe = Universe::new();
+        let mut world = universe.create_world();
+
+        #[derive(Default, Clone, Copy)]
+        pub struct Balls(u32);
+
+        let components = (0..30000)
+            .map(|_| (Pos(1., 2., 3.), Vel(0.1, 0.2, 0.3)))
+            .collect::<Vec<_>>();
+
+        let mut expected = HashMap::<Entity, (Pos, Vel)>::new();
+
+        for (i, e) in world.insert((), components.clone()).iter().enumerate() {
+            if let Some((pos, rot)) = components.get(i) {
+                expected.insert(*e, (*pos, *rot));
+            }
+        }
+
+        let expected_copy = expected.clone();
+        let mut system = SystemBuilder::<()>::new("TestSystem")
+            .with_query(<(Read<Pos>, Read<Vel>)>::query())
+            .build(move |command_buffer, world, _, query| {
+                let mut count = 0;
+                {
+                    for (entity, (pos, vel)) in query.iter_entities_immutable(world) {
+                        assert_eq!(expected_copy.get(&entity).unwrap().0, *pos);
+                        assert_eq!(expected_copy.get(&entity).unwrap().1, *vel);
+                        count += 1;
+
+                        command_buffer.add_component(entity, Balls::default());
+                    }
+                }
+
+                assert_eq!(components.len(), count);
+            });
+
+        system.prepare(&world);
+        system.run(&world);
+
+        system.command_buffer_mut().write(&mut world);
 
         system.prepare(&world);
         system.run(&world);
