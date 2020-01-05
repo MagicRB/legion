@@ -18,7 +18,7 @@ default = ["par-iter", "par-schedule", "events", "ffi"]
 par-iter = ["rayon"]
 par-schedule = ["rayon", "crossbeam-queue"]
 log = ["tracing/log", "tracing/log-always"]
-ffi = []
+ffi = ["easy_ffi", "inventory"]
 events = ["rayon"]
 
 [dependencies]
@@ -35,6 +35,8 @@ paste = "0.1"
 tracing = "0.1"
 metrics = { version = "0.12", optional = true }
 fxhash = "0.2"
+easy_ffi = { version = "0.1.0", optional = true }
+inventory = { version = "0.1.5", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"

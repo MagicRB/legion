@@ -228,6 +228,10 @@
 //!  * `events`: Enables eventing APIs on worlds (enabled by default).
 #![allow(dead_code)]
 
+#[macro_use]
+#[cfg(feature = "ffi")]
+extern crate easy_ffi;
+
 pub mod borrow;
 pub mod command;
 pub mod entity;
@@ -240,6 +244,8 @@ pub mod schedule;
 pub mod storage;
 pub mod system;
 pub mod world;
+#[cfg(feature = "ffi")]
+pub mod c_api;
 
 mod cons;
 mod tuple;

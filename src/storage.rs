@@ -62,6 +62,9 @@ pub struct ComponentTypeId(TypeId, u32);
 impl ComponentTypeId {
     /// Gets the component type ID that represents type `T`.
     pub fn of<T: Component>() -> Self { Self(TypeId::of::<T>(), 0) }
+
+    /// Gets the component type ID that represents type `T`, also adds another identification number used for FFI.
+    pub fn of_c_api<T: Component>(ty: u32) -> Self { Self(TypeId::of::<T>(), ty) }
 }
 
 #[cfg(not(feature = "ffi"))]
