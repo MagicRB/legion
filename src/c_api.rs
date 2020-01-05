@@ -45,19 +45,6 @@ impl From<Entity> for crate::prelude::Entity {
     }
 }
 
-pub struct CApiComponent {
-    name: &'static str,
-    typeid: u64
-}
-
-impl CApiComponent {
-    pub fn new(name: &'static str, typeid: u64) -> Self {
-        CApiComponent { name, typeid }
-    }
-}
-
-inventory::collect!(CApiComponent);
-
 //pub struct ExternalComponent {}
 
 //#[repr(C)]
