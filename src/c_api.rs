@@ -98,7 +98,7 @@ impl From<Entity> for crate::prelude::Entity {
 //    unsafe { slice.offset((size * location.component()) as isize) as *mut c_void }
 //}
 
-fn lgn_world_get_rust_component(ptr: *mut World, ty: u64, entity: Entity) -> *mut c_void {
+pub fn lgn_world_get_rust_component(ptr: *mut World, ty: u64, entity: Entity) -> *mut c_void {
     let world = unsafe { (ptr as *mut crate::prelude::World).as_mut().expect("universe null ptr") }; // @TODO better error perhaps
     let entity: crate::prelude::Entity = entity.into();
 
@@ -121,19 +121,19 @@ fn lgn_world_get_rust_component(ptr: *mut World, ty: u64, entity: Entity) -> *mu
     unsafe { slice.offset((size * location.component()) as isize) as *mut c_void }
 }
 
-fn lgn_universe_new() -> *mut Universe {
+pub fn lgn_universe_new() -> *mut Universe {
     let universe = Box::new(crate::prelude::Universe::new());
     Box::into_raw(universe) as *mut Universe
 }
 
-fn lgn_universe_free(ptr: *mut Universe) {
+pub fn lgn_universe_free(ptr: *mut Universe) {
     unsafe {
         let _universe = Box::from_raw(ptr as *mut crate::prelude::Universe);
         // let universe be dropped
     }
 }
 
-fn lgn_universe_create_world(ptr: *mut Universe) -> *mut World {
+pub fn lgn_universe_create_world(ptr: *mut Universe) -> *mut World {
     unsafe {
         let world = Box::new(
             (ptr as *mut crate::prelude::Universe)
@@ -145,7 +145,7 @@ fn lgn_universe_create_world(ptr: *mut Universe) -> *mut World {
     }
 }
 
-fn lgn_world_free(ptr: *mut World) -> () {
+pub fn lgn_world_free(ptr: *mut World) -> () {
     unsafe {
         let _world = Box::from_raw(ptr as *mut crate::prelude::World);
         // let world be dropped
